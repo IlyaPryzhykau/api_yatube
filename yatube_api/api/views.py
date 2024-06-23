@@ -29,33 +29,34 @@ class PostViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         if serializer.instance.author != self.request.user:
-            raise PermissionDenied("Вы не можете изменять чужие посты.")
+            raise PermissionDenied('Вы не можете изменять чужие посты.')
         serializer.save()
 
     def perform_destroy(self, instance):
         if instance.author != self.request.user:
-            raise PermissionDenied("Вы не можете удалять чужие посты.")
+            raise PermissionDenied('Вы не можете удалять чужие посты.')
         instance.delete()
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
 
+    def get_post(self):
+        return get_object_or_404(Post, pk=self.kwargs.get('post_id'))
+
     def get_queryset(self):
-        post_id = self.kwargs.get('post_id')
-        return Comment.objects.filter(post_id=post_id)
+        if self.get_post():
+            return Comment.objects.filter(post_id=self.kwargs.get('post_id'))
 
     def perform_create(self, serializer):
-        post_id = self.kwargs.get('post_id')
-        post = get_object_or_404(Post, pk=post_id)
-        serializer.save(author=self.request.user, post=post)
+        serializer.save(author=self.request.user, post=self.get_post())
 
     def perform_update(self, serializer):
         if serializer.instance.author != self.request.user:
-            raise PermissionDenied("Вы не можете изменять чужие комментарии.")
+            raise PermissionDenied('Вы не можете изменять чужие комментарии.')
         serializer.save()
 
     def perform_destroy(self, instance):
         if instance.author != self.request.user:
-            raise PermissionDenied("Вы не можете удалять чужие комментарии.")
+            raise PermissionDenied('Вы не можете удалять чужие комментарии.')
         instance.delete()
